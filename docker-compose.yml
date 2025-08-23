@@ -1,0 +1,108 @@
+version: "3.9"
+
+services:
+
+  # Auth microservice
+  auth:
+    build: ./services/auth
+    container_name: auth_service
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres
+    networks:
+      - b2b_net
+
+  # User microservice
+  user:
+    build: ./services/user
+    container_name: user_service
+    ports:
+      - "8002:8000"
+    depends_on:
+      - postgres
+    networks:
+      - b2b_net
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/b2b_db
+
+  # Payment microservice
+  payment:
+    build: ./services/payment
+    container_name: payment_service
+    ports:
+      - "8003:8000"
+    depends_on:
+      - postgres
+    networks:
+      - b2b_net
+
+  # Document microservice
+  document:
+    build: ./services/document
+    container_name: document_service
+    ports:
+      - "8004:8000"
+    depends_on:
+      - mongo
+    networks:
+      - b2b_net
+
+  # Gateway (FastAPI ou NGINX)
+  gateway:
+    build: ./gateway
+    container_name: api_gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth
+      - user
+      - payment
+      - document
+    networks:
+      - b2b_net
+
+  # React Frontend
+  frontend:
+    build: ./frontend
+    container_name: frontend_b2b
+    ports:
+      - "5173:80"
+    depends_on:
+      - gateway
+    networks:
+      - b2b_net
+
+
+  # PostgreSQL (base relationnelle)
+  postgres:
+    image: postgres:14
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: b2b_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - b2b_net
+
+  # MongoDB (pour documents, devis, factures)
+  mongo:
+    image: mongo:6
+    container_name: mongo_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - b2b_net
+
+volumes:
+  postgres_data:
+  mongo_data:
+
+networks:
+  b2b_net:
