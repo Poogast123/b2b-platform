@@ -1,6 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 import controller
+from dependencies import get_current_user
+from database import get_db
 
 
 class UserIn(BaseModel):
@@ -20,6 +23,11 @@ def add_user(user: UserIn):
 
 
 @router.get("/profile")
-def get_profile():
-    # Exemple simple, adapter selon ton controller
-    return {"name": "John Doe", "email": "john@example.com", "company": "BH3 MEDIA"}
+def get_profile(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    user = controller.get_user_by_email(db, current_user["email"])
+    if not user:
+        return {"error": "User not found"}
+    return user
