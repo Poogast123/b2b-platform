@@ -17,3 +17,9 @@ def get_users():
 @router.post("/")
 def add_user(user: UserIn):
     return controller.create_user(user)
+
+
+@router.get("/profile")
+def get_profile():
+    # Exemple simple, adapter selon ton controller
+    return {"name": "John Doe", "email": "john@example.com", "company": "BH3 MEDIA"}
