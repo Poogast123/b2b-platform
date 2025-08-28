@@ -1,21 +1,30 @@
 import httpx
-from fastapi import Request, Response
+from fastapi import Request, Response, HTTPException
 
 async def forward_request(request: Request, target_url: str):
-    async with httpx.AsyncClient() as client:
-        method = request.method
-        body = await request.body()
-        headers = dict(request.headers)
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            method = request.method
+            body = await request.body()
 
-        response = await client.request(
-            method,
-            target_url,
-            content=body,
-            headers=headers,
-        )
+            # Clean headers to avoid conflicts
+            headers = {
+                k: v for k, v in request.headers.items()
+                if k.lower() not in ["host", "content-length", "transfer-encoding"]
+            }
 
-        return Response(
-            content=response.content,
-            status_code=response.status_code,
-            headers=dict(response.headers),
-        )
+            response = await client.request(
+                method,
+                target_url,
+                content=body,
+                headers=headers,
+            )
+
+            # Return response from the microservice
+            return Response(
+                content=response.content,
+                status_code=response.status_code,
+                headers={k: v for k, v in response.headers.items() if k.lower() != "transfer-encoding"},
+            )
+    except httpx.RequestError:
+        raise HTTPException(status_code=502, detail="Microservice unavailable")

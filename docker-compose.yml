@@ -8,8 +8,14 @@ services:
     container_name: auth_service
     ports:
       - "8001:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${POSTGRES_URL}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - b2b_net
 
@@ -19,12 +25,15 @@ services:
     container_name: user_service
     ports:
       - "8002:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${POSTGRES_URL}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - b2b_net
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/b2b_db
 
   # Payment microservice
   payment:
@@ -32,8 +41,13 @@ services:
     container_name: payment_service
     ports:
       - "8003:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${POSTGRES_URL}
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     networks:
       - b2b_net
 
@@ -43,17 +57,24 @@ services:
     container_name: document_service
     ports:
       - "8004:8000"
+    env_file:
+      - .env
+    environment:
+      MONGO_URI: mongodb://mongo:27017/${MONGO_DB}
     depends_on:
-      - mongo
+      mongo:
+        condition: service_healthy
     networks:
       - b2b_net
 
-  # Gateway (FastAPI ou NGINX)
+  # API Gateway (NGINX Reverse Proxy)
   gateway:
-    build: ./gateway
+    image: nginx:alpine
     container_name: api_gateway
     ports:
-      - "8000:8000"
+      - "8000:80"
+    volumes:
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - auth
       - user
@@ -64,7 +85,9 @@ services:
 
   # React Frontend
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: frontend_b2b
     ports:
       - "5173:80"
@@ -73,23 +96,29 @@ services:
     networks:
       - b2b_net
 
-
-  # PostgreSQL (base relationnelle)
+  # PostgreSQL
   postgres:
     image: postgres:14
     container_name: postgres_db
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: b2b_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
       - b2b_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
 
-  # MongoDB (pour documents, devis, factures)
+  # MongoDB
   mongo:
     image: mongo:6
     container_name: mongo_db
@@ -99,6 +128,11 @@ services:
       - mongo_data:/data/db
     networks:
       - b2b_net
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
 
 volumes:
   postgres_data:
