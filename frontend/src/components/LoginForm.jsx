@@ -6,8 +6,8 @@ const LoginForm = ({ onSubmit, loading }) => {
     email: '',
     password: ''
   });
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -15,7 +15,8 @@ const LoginForm = ({ onSubmit, loading }) => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
+
+    // Clear error for the field as user types
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -26,19 +27,19 @@ const LoginForm = ({ onSubmit, loading }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -52,6 +53,7 @@ const LoginForm = ({ onSubmit, loading }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Email field */}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
           Email Address
@@ -64,17 +66,16 @@ const LoginForm = ({ onSubmit, loading }) => {
             type="email"
             value={formData.email}
             onChange={handleChange}
+            placeholder="Enter your email"
             className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
               errors.email ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="Enter your email"
           />
         </div>
-        {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-        )}
+        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
       </div>
 
+      {/* Password field */}
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
           Password
@@ -87,10 +88,10 @@ const LoginForm = ({ onSubmit, loading }) => {
             type={showPassword ? 'text' : 'password'}
             value={formData.password}
             onChange={handleChange}
+            placeholder="Enter your password"
             className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
               errors.password ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="Enter your password"
           />
           <button
             type="button"
@@ -100,11 +101,10 @@ const LoginForm = ({ onSubmit, loading }) => {
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         </div>
-        {errors.password && (
-          <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-        )}
+        {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
       </div>
 
+      {/* Submit button */}
       <button
         type="submit"
         disabled={loading}

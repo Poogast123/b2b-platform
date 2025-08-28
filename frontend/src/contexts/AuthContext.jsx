@@ -4,11 +4,7 @@ import { authApi } from '../api/auth';
 const AuthContext = createContext();
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useContext(AuthContext);
 };
 
 export const AuthProvider = ({ children }) => {
@@ -16,57 +12,47 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Check auth on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Verify token with backend
-      authApi.verifyToken(token)
-        .then(userData => {
-          setUser(userData);
-          setIsAuthenticated(true);
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
+    const checkAuth = async () => {
+      try {
+        const userData = await authApi.verifyToken();
+        setUser({ email: userData.email });
+        setIsAuthenticated(true);
+      } catch (err) {
+        console.warn("Auth verification failed:", err.message);
+        localStorage.removeItem('token'); // Remove invalid or missing token
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
 
+  // Login function
   const login = async (credentials) => {
     try {
       const response = await authApi.login(credentials);
-      const { token, user } = response;
-      
-      localStorage.setItem('token', token);
-      setUser(user);
+      setUser({ email: credentials.email });
       setIsAuthenticated(true);
-      
       return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
+    } catch (err) {
+      return { success: false, error: err.message };
     }
   };
 
+  // Logout function
   const logout = () => {
-    localStorage.removeItem('token');
+    authApi.logout();
     setUser(null);
     setIsAuthenticated(false);
   };
 
-  const value = {
-    user,
-    isAuthenticated,
-    loading,
-    login,
-    logout
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, isAuthenticated, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

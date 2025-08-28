@@ -14,3 +14,6 @@ def authenticate_user(db: Session, email: str, password: str):
     if user and security.verify_password(password, user.hashed_password):
         return user
     return None
+
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == email).first()
