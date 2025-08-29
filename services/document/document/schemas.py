@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Any
 
 class DocumentCreate(BaseModel):
-    type: str  # "facture", "devis", "contrat"
+    type: str
     client: str
     content: dict
 
