@@ -2,6 +2,9 @@ from sqlalchemy.orm import Session
 from . import models, schemas
 import random
 
+from .models import Payment
+
+
 def create_payment(db: Session, payment_data: schemas.PaymentCreate):
     # Simuler acceptation/rejet (version future : Stripe API)
     status = "success" if random.random() > 0.2 else "failed"
@@ -18,3 +21,7 @@ def create_payment(db: Session, payment_data: schemas.PaymentCreate):
 
 def get_payment_by_reference(db: Session, ref: str):
     return db.query(models.Payment).filter(models.Payment.reference == ref).first()
+
+def get_all_payments(db: Session):
+    return db.query(Payment).all()  # Assuming Payment is your SQLAlchemy model
+
