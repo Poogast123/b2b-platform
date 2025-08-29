@@ -77,15 +77,22 @@ const PaymentForm = ({ onSubmit, loading }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSubmit({
-        ...formData,
-        cardNumber: formData.cardNumber.replace(/\s/g, '')
-      });
-    }
-  };
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      if (validateForm()) {
+        onSubmit({
+          client: formData.cardHolderName,
+          amount: parseFloat(formData.amount),
+          reference: `TXN-${Date.now()}`,
+          card_number: formData.cardNumber.replace(/\s/g, ''),
+          cardholder_name: formData.cardHolderName,
+          expiry_date: formData.expiryDate,
+          cvv: formData.cvv
+        });
+      }
+    };
+
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">

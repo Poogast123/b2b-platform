@@ -4,3 +4,4 @@ sqlalchemy
 psycopg2-binary
 pg8000
 python-dotenv
+httpx==0.27.0
